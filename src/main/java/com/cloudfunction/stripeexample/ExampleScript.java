@@ -19,6 +19,7 @@ import java.util.Map;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
+import com.stripe.model.CustomerCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.Product;
@@ -81,7 +82,14 @@ public class ExampleScript implements HttpFunction {
 		String subscriptionStatus = "";
 		// Create the customer
 		if (!priceId.isEmpty()) {
-			customerId = createCustomer(name, email);
+			
+			//Search for existing customer
+			customerId = searchCustomer(email);
+			
+			//Create new customer if doesnt already exist
+			if(customerId.isBlank()) {
+				customerId = createCustomer(name, email);
+			}
 
 			// Bill the customer via checkout or subscription
 			if (monthly) {
@@ -167,6 +175,28 @@ public class ExampleScript implements HttpFunction {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.out.println("Error in create price ");
+			return "";
+		}
+	}
+	
+	private String searchCustomer(String email) {
+		try {
+			Map<String, Object> params = new HashMap<>();
+			String cusId = "";
+			CustomerCollection customers = Customer.list(params);
+
+			for (Customer customer : customers.getData()) {
+				if (customer.getEmail().equalsIgnoreCase(email)) {
+					cusId = customer.getId();
+					System.out.println("Customer Id from match: " + cusId);
+				}
+			}
+
+			return cusId;
+		} catch (StripeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("Error in customer by email ");
 			return "";
 		}
 	}
